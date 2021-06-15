@@ -80,6 +80,11 @@ plot_rec_sweep <- ggplot() +
     ggtitle("Recombination rate around sweep regions")
     
 
+pdf("figures/sweep_recombination.pdf",
+    height = 3.5)
+print(plot_rec_sweep)
+dev.off()
+
 wilcox.test(x = filter(sweep_rec, set == "Hp")$rec,
             y = rec$average_rec)
 
@@ -88,3 +93,4 @@ wilcox.test(x = filter(sweep_rec, set == "Tajima's D")$rec,
 
 wilcox.test(x = filter(sweep_rec, set == "Both Hp and Tajima's D")$rec,
             y = rec$average_rec)
+
