@@ -4,6 +4,7 @@ library(GenomicRanges)
 library(purrr)
 library(readr)
 
+source("R/interval_simulation_functions.R")
 
 
 ## Bermuda sweeps
@@ -62,4 +63,45 @@ qanbari_ranges <- GRanges(seqnames = qanbari_lifted$X1,
                           mcols = qanbari_lifted)
 
 
-findOverlaps(qanbari_ranges, sweep_ranges[[1]])
+qanbari_overlaps <- map(sweep_ranges,
+                        function(x) subsetByOverlaps(x,
+                                                     qanbari_ranges))
+
+## Simulate overlaps
+
+chroms <- read_tsv("data/galGal4.chrom.sizes",
+                   col_names = FALSE)
+
+autosomal_size <- sum(chroms$X2[chroms$X1 %in% paste("chr", 1:33, sep = "")])
+
+
+
+
+
+sim1 <- simulate_overlaps(width(sweep_ranges[[1]]) - 1,
+                          width(qanbari_ranges),
+                          autosomal_size,
+                          n_rep = 500)
+
+
+sim2 <- simulate_overlaps(width(sweep_ranges[[2]]) - 1,
+                          width(qanbari_ranges),
+                          autosomal_size,
+                          n_rep = 500)
+
+
+sim3 <- simulate_overlaps(width(qanbari_ranges),
+                          width(sweep_ranges[[3]]) - 1,
+                          autosomal_size,
+                          n_rep = 500)
+    
+print(mean(sim1))
+print(quantile(sim1, 0.95))
+
+
+print(mean(sim2))
+print(quantile(sim2, 0.95))
+
+
+print(mean(sim3))
+print(quantile(sim3, 0.95))
