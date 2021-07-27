@@ -9,6 +9,10 @@ module load delly
 
 set -eu
 
+## Type of analysis (DEL INS INV DUP BND)
+
+TYPE=$1
+
 if [ ! -d delly ]; then
     mkdir delly
 fi
@@ -21,16 +25,18 @@ do
     SAMPLE=${SAMPLE%_recal.bam}
     
     echo $SAMPLE
+    echo $TYPE 
     
-    if [ ! -f delly/${SAMPLE}_delly.bcf ]; then
-    
+    if [ ! -f delly/${SAMPLE}_delly_${TYPE}.bcf ]; then
+
         delly call \
             -g /proj/sllstore2017078/private/martinj/galGal4_validated.fa \
-            $FILE \
+            -t $TYPE \
             --noindels \
-            -o delly/${SAMPLE}_delly.bcf
+            -o delly/${SAMPLE}_delly_${TYPE}.bcf \
+            $FILE 
             
-    fi 
+    fi
     
 done
 
