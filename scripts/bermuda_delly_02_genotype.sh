@@ -9,9 +9,13 @@ module load delly
 
 set -eu
 
+## Type of analysis (DEL INS INV DUP BND)
+
+TYPE=$1
+
 delly merge \
-    -o delly/delly_merged.bcf \
-    $(ls delly/P4806*.bcf)
+    -o delly/delly_merged_${TYPE}.bcf \
+    $(ls delly/P4806_*delly_${TYPE}.bcf)
 
 if [ ! -d delly/genotyped ]; then
     mkdir delly/genotyped
@@ -26,13 +30,13 @@ do
     
     echo $SAMPLE
     
-    if [ ! -f delly/genotyped/${SAMPLE}_delly_genotyped.bcf ]; then
+    if [ ! -f delly/genotyped/${SAMPLE}_delly_genotyped_${TYPE}.bcf ]; then
     
         delly call \
             -g /proj/sllstore2017078/private/martinj/galGal4_validated.fa \
             $FILE \
-            -v delly/delly_merged.bcf \
-            -o delly/genotyped/${SAMPLE}_delly_genotyped.bcf
+            -v delly/delly_merged_${TYPE}.bcf \
+            -o delly/genotyped/${SAMPLE}_delly_genotyped_${TYPE}.bcf
             
     fi 
     
