@@ -14,6 +14,7 @@ set -eu
 TYPE=$1
 
 delly merge \
+    -t ${TYPE} \
     -o delly/delly_merged_${TYPE}.bcf \
     $(ls delly/P4806_*delly_${TYPE}.bcf)
 
@@ -33,6 +34,7 @@ do
     if [ ! -f delly/genotyped/${SAMPLE}_delly_genotyped_${TYPE}.bcf ]; then
     
         delly call \
+            -t ${TYPE} \
             -g /proj/sllstore2017078/private/martinj/galGal4_validated.fa \
             $FILE \
             -v delly/delly_merged_${TYPE}.bcf \
