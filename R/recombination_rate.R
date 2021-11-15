@@ -25,7 +25,7 @@ names(sweep_ranges) <- c("Hp", "Tajima's D", "Both Hp and Tajima's D")
 
 ## Read recombination regions
 
-rec <- read_tsv("data/groenen2009_windows_500kbp_galgal4.txt")
+rec <- read_tsv("data/elferink2010_500kbp_Galgal4.txt")
 
 rec_ranges <- makeGRangesFromDataFrame(rec, keep.extra.columns = TRUE)
 
@@ -85,6 +85,9 @@ pdf("figures/sweep_recombination.pdf",
 print(plot_rec_sweep)
 dev.off()
 
+
+## Wilcox tests compared to median
+
 wilcox.test(x = filter(sweep_rec, set == "Hp")$rec,
             y = rec$average_rec)
 
@@ -94,3 +97,10 @@ wilcox.test(x = filter(sweep_rec, set == "Tajima's D")$rec,
 wilcox.test(x = filter(sweep_rec, set == "Both Hp and Tajima's D")$rec,
             y = rec$average_rec)
 
+
+
+
+## Ger percentile for each median
+
+map_dbl(medians$median,
+        function(m) sum(rec$average_rec < m, na.rm = TRUE)/length(na.exclude(rec$average_rec)))
