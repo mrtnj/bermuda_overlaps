@@ -11,10 +11,7 @@ set -eu
 
 for TYPE in DEL INS INV DUP; do
 
-    bcftools view \
-        -o  delly/merged/delly_sweeps_${TYPE}.vcf \
-        -R bermuda_sweeps.bed \
-        delly/merged/delly_merged_filtered_${TYPE}.bcf
+    ## Total stats
 
     bcftools stats \
         delly/merged/delly_merged_filtered_${TYPE}.bcf \
@@ -24,13 +21,15 @@ for TYPE in DEL INS INV DUP; do
         delly/merged/delly_merged_raw_${TYPE}.bcf \
         > delly/merged/delly_stats_raw_${TYPE}.txt
 
+    ## Extract all
+
     bcftools query \
-        -f '%CHROM\t%POS\t%REF\t%ALT\t%TYPE\n' \
+        -f '%CHROM\t%POS\t%INFO\t%QUAL\t%FILTER[\t%GT]\n' \
         -o delly/merged/delly_merged_raw_${TYPE}.txt \
         delly/merged/delly_merged_raw_${TYPE}.bcf 
         
     bcftools query \
-        -f '%CHROM\t%POS\t%REF\t%ALT\t%TYPE\n' \
+        -f '%CHROM\t%POS\t%INFO\t%QUAL\t%FILTER[\t%GT]\n' \
         -o delly/merged/delly_merged_filtered_${TYPE}.txt \
         delly/merged/delly_merged_filtered_${TYPE}.bcf 
         
