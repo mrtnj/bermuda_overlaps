@@ -93,4 +93,11 @@ plot_coverage_sweep <- ggplot() +
     xlab("") +
     ggtitle("Coverage around sweep regions")
 
+pdf("figures/sweep_coverage.pdf",
+    height = 3.5)
+print(plot_coverage_sweep)
+dev.off()
 
+
+wilcox.test(x = filter(average_coverage_sweeps, set == "Both Hp and Tajima's D")$average_coverage,
+            y = background$average_coverage)
