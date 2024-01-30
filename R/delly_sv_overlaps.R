@@ -63,6 +63,8 @@ ac <- get_altcount(geno)
 
 sv_filtered <- sv[ac > 1 & sv$filter == "PASS",]
 
+print(table(sv_filtered$type))
+
 
 sv_ranges <- makeGRangesFromDataFrame(sv_filtered,
                                       keep.extra.columns = TRUE)
@@ -106,6 +108,7 @@ plot_overlap_sv <- ggplot() +
                   x = xpos - 0.1,
                   y = (start + end)/2/1e6,
                   colour = type),
+              hjust = "inward",
               data = overlaps_sv) +
     geom_text(aes(label = paste(signif(width/1e3, 3), "kbp"),
                   x = xpos - 0.1,
@@ -125,3 +128,8 @@ plot_overlap_sv <- ggplot() +
     theme(panel.grid = element_blank(),
           strip.background = element_blank()) +
     ggtitle("Structural variant calls overlapping sweep regions")
+
+
+pdf("figures/sweep_sv.pdf")
+print(plot_overlap_sv)
+dev.off()
