@@ -9,14 +9,32 @@ source("R/interval_simulation_functions.R")
 
 ## Bermuda sweeps
 
-files <- system("ls data/Bermuda*_regions",
-                intern = TRUE)
+files <- c("data/ehh_sweeps.csv", "data/clr_sweeps.csv", "data/tajima_sweeps.csv")
 
-sweeps <- map(files, read_tsv)
+sweeps <- map(files, read_csv)
 
-sweep_ranges <- map(sweeps, makeGRangesFromDataFrame)
+names(sweeps) <- c("EHH", "CLR", "Tajima")
 
-names(sweep_ranges) <- c("Hp", "Tajima's D", "Both Hp and Tajima's D")
+sweeps_split <- map(sweeps, function(x) split(x, x$population))
+
+sweeps_list <- list_flatten(sweeps_split)
+
+sweep_ranges <- map(sweeps_list, makeGRangesFromDataFrame)
+
+
+consensus_files <- c("data/consensus_bermuda.csv", "data/consensus_kauai.csv")
+
+consensus <- map(consensus_files, read_csv)
+
+names(consensus) <- c("bermuda", "kauai")
+
+consensus_ranges <- map(
+    consensus,
+    function(x) {
+        GenomicRanges::reduce(GRanges(seqnames = x$chr_name,
+                                      ranges = IRanges(x$region_start, x$region_end)))
+    }
+)
 
 
 
@@ -47,20 +65,24 @@ write.table(qanbari_bed,
             quote = FALSE)
 
 
-## Lifted to Galgal4
+## Lifted to Galgal6
 
-qanbari_lift <- read_tsv("data/qanbari_hglft_galgal4_0.7.bed",
+qanbari_lift <- read_tsv("data/qnbari_hglft_galgal6.bed",
                          col_names = FALSE)
                          
 
 
 qanbari_lifted <- inner_join(qanbari_lift, qanbari, by = c("X4" = "id"))
 
+qanbari_lifted$X1 <- sub(qanbari_lifted$X1,
+                         pattern = "chr",
+                         replacement = "")
 
-qanbari_ranges <- GRanges(seqnames = qanbari_lifted$X1,
-                          ranges = IRanges(qanbari_lifted$X2 + 1,
-                                           qanbari_lifted$X3),
-                          mcols = qanbari_lifted)
+
+qanbari_ranges <- GenomicRanges::reduce(GRanges(seqnames = qanbari_lifted$X1,
+                                                ranges = IRanges(qanbari_lifted$X2 + 1,
+                                                                 qanbari_lifted$X3),
+                                                mcols = qanbari_lifted))
 
 
 qanbari_overlaps <- map(sweep_ranges,
@@ -69,39 +91,109 @@ qanbari_overlaps <- map(sweep_ranges,
 
 ## Simulate overlaps
 
-chroms <- read_tsv("data/galGal4.chrom.sizes",
+chroms <- read_tsv("data/galGal6.chrom.sizes",
                    col_names = FALSE)
 
 autosomal_size <- sum(chroms$X2[chroms$X1 %in% paste("chr", 1:33, sep = "")])
 
 
 
-
-
-sim1 <- simulate_overlaps(width(sweep_ranges[[1]]) - 1,
-                          width(qanbari_ranges),
-                          autosomal_size,
-                          n_rep = 500)
-
-
-sim2 <- simulate_overlaps(width(sweep_ranges[[2]]) - 1,
-                          width(qanbari_ranges),
-                          autosomal_size,
-                          n_rep = 500)
-
-
-sim3 <- simulate_overlaps(width(qanbari_ranges),
-                          width(sweep_ranges[[3]]) - 1,
-                          autosomal_size,
-                          n_rep = 500)
+analyse_sim <- function(sim, n) {
     
-print(mean(sim1))
-print(quantile(sim1, 0.95))
+    q <- quantile(sim, 0.95)
+    pt <- (sum(sim >= n) + 1)/1000
+    
+    tibble(q95 = q,
+           p_less_than = pt)
+    
+}
 
 
-print(mean(sim2))
-print(quantile(sim2, 0.95))
+
+## EHH
+
+sim_bermuda_kauai_ehh <- simulate_overlaps(width(sweep_ranges$EHH_bermuda) - 1,
+                                           width(sweep_ranges$EHH_kauaii) - 1,
+                                           autosomal_size,
+                                           n_rep = 1000)
+
+print(analyse_sim(sim_bermuda_kauai_ehh, 17))
+
+sim_qanbari_bermuda_ehh <- simulate_overlaps(width(sweep_ranges$EHH_bermuda) - 1,
+                                             width(qanbari_ranges),
+                                             autosomal_size,
+                                             n_rep = 1000)
+
+print(analyse_sim(sim_qanbari_bermuda_ehh, 5))
+
+sim_qanbari_kauai_ehh <- simulate_overlaps(width(sweep_ranges$EHH_kauai) - 1,
+                                           width(qanbari_ranges),
+                                           autosomal_size,
+                                           n_rep = 1000)
+
+print(analyse_sim(sim_qanbari_kauai_ehh, 4))
 
 
-print(mean(sim3))
-print(quantile(sim3, 0.95))
+## CLR
+
+
+sim_bermuda_kauai_clr <- simulate_overlaps(width(sweep_ranges$CLR_bermuda) - 1,
+                                           width(sweep_ranges$CLR_kauaii) - 1,
+                                           autosomal_size,
+                                           n_rep = 1000)
+
+print(analyse_sim(sim_bermuda_kauai_clr, 44))
+
+
+sim_qanbari_bermuda_clr <- simulate_overlaps(width(sweep_ranges$CLR_bermuda) - 1,
+                                             width(qanbari_ranges),
+                                             autosomal_size,
+                                             n_rep = 1000)
+
+print(analyse_sim(sim_qanbari_bermuda_clr, 10))
+
+
+sim_qanbari_kauai_clr <- simulate_overlaps(width(sweep_ranges$CLR_kauai) - 1,
+                                           width(qanbari_ranges),
+                                           autosomal_size,
+                                           n_rep = 1000)
+
+print(analyse_sim(sim_qanbari_kauai_clr, 21))
+
+
+## Tajima
+
+
+sim_bermuda_kauai_taj <- simulate_overlaps(width(sweep_ranges$Tajima_Bermuda) - 1,
+                                           width(sweep_ranges$Tajima_Hawaii) - 1,
+                                           autosomal_size,
+                                           n_rep = 1000)
+
+print(analyse_sim(sim_bermuda_kauai_taj, 39))
+
+sim_qanbari_bermuda_taj <- simulate_overlaps(width(sweep_ranges$Tajima_Bermuda) - 1,
+                                             width(qanbari_ranges),
+                                             autosomal_size,
+                                             n_rep = 1000)
+
+print(analyse_sim(sim_qanbari_bermuda_taj, 18))
+
+
+sim_qanbari_kauai_taj <- simulate_overlaps(width(sweep_ranges$Tajima_Hawaii) - 1,
+                                           width(qanbari_ranges),
+                                           autosomal_size,
+                                           n_rep = 1000)
+
+print(analyse_sim(sim_qanbari_kauai_taj, 17))
+
+
+
+## Consensus Bermuda / Hawaii
+
+
+sim_consensus <- simulate_overlaps(width(consensus_ranges$bermuda) - 1,
+                                   width(consensus_ranges$kauai) - 1,
+                                   autosomal_size,
+                                   n_rep = 1000)
+
+print(analyse_sim(sim_consensus, 3))
